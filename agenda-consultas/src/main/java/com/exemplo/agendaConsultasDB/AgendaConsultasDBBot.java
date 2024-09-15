@@ -1,8 +1,8 @@
-package com.exemplo;
+package com.exemplo.agendaConsultasDB;
 
-import chat.dobot.anotacoes.DoBot;
-import chat.dobot.anotacoes.EstadoChat;
-import chat.dobot.dominio.Contexto;
+import chat.dobot.bot.Contexto;
+import chat.dobot.bot.annotations.DoBot;
+import chat.dobot.bot.annotations.EstadoChat;
 import org.yorm.exception.YormException;
 
 import java.time.LocalDateTime;
@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-@DoBot
+//@DoBot
 public class AgendaConsultasDBBot {
 
     private ConsultaBuilder consultaBuilder;

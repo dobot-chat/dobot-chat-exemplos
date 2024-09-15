@@ -1,11 +1,9 @@
-package com.exemplo;
+package com.exemplo.agendaConsultasDB;
 
-
-import chat.dobot.anotacoes.Entidade;
-import chat.dobot.anotacoes.Id;
+import chat.dobot.bot.annotations.Id;
 
 import java.time.LocalDateTime;
 
-@Entidade
+@chat.dobot.bot.annotations.Entidade
 public record Consulta(@Id int Id, String paciente, String medico, LocalDateTime dataHora) {
 }

@@ -6,8 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="agenda-consultas-db-bot" />
-        <module name="agenda-consultas-lista-bot" />
+        <module name="agenda-consultas" />
       </profile>
     </annotationProcessing>
   </component>

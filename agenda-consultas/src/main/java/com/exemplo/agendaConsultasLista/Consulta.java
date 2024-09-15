@@ -1,4 +1,4 @@
-package com.exemplo;
+package com.exemplo.agendaConsultasLista;
 
 import java.time.LocalDateTime;
 
