@@ -28,13 +28,11 @@ public class AgendaConsultasDBBot {
     @EstadoChat(inicial = true)
     public void menuInicial(Contexto contexto) throws YormException {
         String msg = contexto.getMensagemUsuario();
-
         if (msg.matches("[0-4]")) {
             processarComando(contexto);
         } else {
             contexto.responder(MENSAGEM_OPCAO_INVALIDA);
         }
-
     }
 
     private void processarComando(Contexto contexto) throws YormException {

@@ -35,7 +35,6 @@ public class AgendaConsultasListaBot {
         } else {
             contexto.responder(MENSAGEM_OPCAO_INVALIDA);
         }
-
     }
 
     private void processarComando(Contexto contexto) {
