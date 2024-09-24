@@ -1,20 +1,19 @@
-package com.exemplo.agendaConsultasLista;
+package chat.exemplos.agendaConsultas.persistencia;
 
 import chat.dobot.bot.Contexto;
 import chat.dobot.bot.annotations.DoBot;
 import chat.dobot.bot.annotations.EstadoChat;
+import org.yorm.exception.YormException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.LinkedList;
 import java.util.List;
 
 //@DoBot
-public class AgendaConsultasListaBot {
+public class AgendaConsultasBot {
 
-    private Consulta novaConsulta;
-    private List<Consulta> consultas = new LinkedList<>();
+    private ConsultaBuilder consultaBuilder;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private static final String MENSAGEM_MENU_INICIAL = "Olá, eu sou o Gerenciador de Consultas. Em que posso ajudar? <br>1 - Agendar consulta <br>2 - Listar consultas <br>3 - Cancelar consulta <br>4 - Buscar consultas por paciente";
@@ -27,9 +26,8 @@ public class AgendaConsultasListaBot {
     private static final String MENSAGEM_OPERACAO_CANCELADA = "Operação cancelada. <br>Digite 0 se quiser ver as opções novamente.";
 
     @EstadoChat(inicial = true)
-    public void menuInicial(Contexto contexto) {
+    public void menuInicial(Contexto contexto) throws YormException {
         String msg = contexto.getMensagemUsuario();
-
         if (msg.matches("[0-4]")) {
             processarComando(contexto);
         } else {
@@ -37,7 +35,7 @@ public class AgendaConsultasListaBot {
         }
     }
 
-    private void processarComando(Contexto contexto) {
+    private void processarComando(Contexto contexto) throws YormException {
         switch (contexto.getMensagemUsuario()) {
             case "0":
                 contexto.responder(MENSAGEM_MENU_INICIAL);
@@ -49,7 +47,7 @@ public class AgendaConsultasListaBot {
                 contexto.responder(listarConsultas(contexto));
                 break;
             case "3":
-                if (consultas.isEmpty()) {
+                if (contexto.getServico(Consulta.class).buscarTodos().isEmpty()) {
                     contexto.responder(MENSAGEM_SEM_CONSULTAS_CADASTRADAS);
                 } else {
                     contexto.responder(listarConsultas(contexto) + "<br>" + MENSAGEM_CANCELAR_CONSULTA, "cancelarConsulta");
@@ -64,17 +62,17 @@ public class AgendaConsultasListaBot {
         }
     }
 
-    private String listarConsultas(Contexto contexto) {
+    private String listarConsultas(Contexto contexto) throws YormException {
         StringBuilder sb = new StringBuilder();
+        List<Consulta> consultas = contexto.getServico(Consulta.class).buscarTodos();
 
         if (!consultas.isEmpty()) sb.append("Consultas agendadas: <br>");
         else sb.append(MENSAGEM_SEM_CONSULTAS_CADASTRADAS);
 
-        for (int i = 1; i <= consultas.size(); i++) {
-            Consulta consulta = consultas.get(i - 1);
-            sb.append("(").append(i).append(") ").append("Paciente: ").append(consulta.getPaciente()).append(" - ");
-            sb.append("Medico: ").append(consulta.getMedico()).append(" - ");
-            sb.append("Data e Hora: ").append(formatter.format(consulta.getDataHora())).append("<br>");
+        for (Consulta consulta : consultas) {
+            sb.append("(").append(consulta.Id()).append(") ").append("Paciente: ").append(consulta.paciente()).append(" - ");
+            sb.append("Medico: ").append(consulta.medico()).append(" - ");
+            sb.append("Data e Hora: ").append(formatter.format(consulta.dataHora())).append("<br>");
         }
         return sb.toString();
     }
@@ -84,8 +82,8 @@ public class AgendaConsultasListaBot {
         String nomePaciente = contexto.getMensagemUsuario();
 
         if (!nomePaciente.equals("0")) {
-            novaConsulta = new Consulta();
-            novaConsulta.setPaciente(nomePaciente);
+            consultaBuilder = new ConsultaBuilder();
+            consultaBuilder.setPaciente(nomePaciente);
             contexto.responder(MENSAGEM_INFORMAR_MEDICO, "informarMedico");
         } else {
             contexto.responder(MENSAGEM_OPERACAO_CANCELADA, "menuInicial");
@@ -97,7 +95,7 @@ public class AgendaConsultasListaBot {
         String nomeMedico = contexto.getMensagemUsuario();
 
         if (!nomeMedico.equals("0")) {
-            novaConsulta.setMedico(nomeMedico);
+            consultaBuilder.setMedico(nomeMedico);
             contexto.responder(MENSAGEM_INFORMAR_DATA_HORA, "informarDataHora");
         } else {
             contexto.responder(MENSAGEM_OPERACAO_CANCELADA, "menuInicial");
@@ -105,15 +103,17 @@ public class AgendaConsultasListaBot {
     }
 
     @EstadoChat
-    public void informarDataHora(Contexto contexto) {
+    public void informarDataHora(Contexto contexto) throws YormException {
         String msgDataHora = contexto.getMensagemUsuario();
 
         if (!msgDataHora.equals("0")) {
             try {
                 LocalDateTime dataHora = LocalDateTime.parse(msgDataHora, formatter);
-                novaConsulta.setDataHora(dataHora);
 
-                consultas.add(novaConsulta);
+                consultaBuilder.setDataHora(dataHora);
+                Consulta consulta = consultaBuilder.build();
+
+                contexto.getServico(Consulta.class).salvar(consulta);
                 contexto.responder("Consulta agendada com sucesso!", "menuInicial");
             } catch (DateTimeParseException e) {
                 contexto.responder("Formato inválido! Por favor, informe a data e hora no formato dd/MM/yyyy HH:mm (Exemplo: 01/01/20224 10:00)", "informarDataHora");
@@ -124,20 +124,20 @@ public class AgendaConsultasListaBot {
     }
 
     @EstadoChat
-    public void cancelarConsulta(Contexto contexto) {
+    public void cancelarConsulta(Contexto contexto) throws YormException {
         String idConsulta = contexto.getMensagemUsuario();
 
         if (!idConsulta.equals("0")) {
             try {
                 int id = Integer.parseInt(idConsulta);
+                Consulta consulta = contexto.getServico(Consulta.class).buscarPorId(id);
 
-                if (id > 0 && id <= consultas.size()) {
-                    consultas.remove(id - 1);
+                if (consulta != null) {
+                    contexto.getServico(Consulta.class).deletarPorId(consulta.Id());
                     contexto.responder("Consulta cancelada com sucesso!", "menuInicial");
-                    return;
+                } else {
+                    contexto.responder("Consulta não encontrada! Digite 0 se quiser ver as opções novamente.", "menuInicial");
                 }
-
-                contexto.responder("Consulta não encontrada! Digite 0 se quiser ver as opções novamente.", "menuInicial");
             } catch (NumberFormatException e) {
                 contexto.responder("Formato inválido! Digite 0 se quiser ver as opções novamente.", "menuInicial");
             }
@@ -147,7 +147,7 @@ public class AgendaConsultasListaBot {
     }
 
     @EstadoChat(estado = "buscarConsultasPorPaciente")
-    public void buscarConsultasPorPaciente(Contexto contexto) {
+    public void buscarConsultasPorPaciente(Contexto contexto) throws YormException {
         String nomePaciente = contexto.getMensagemUsuario();
 
         if (nomePaciente.equals("0")) {
@@ -155,19 +155,19 @@ public class AgendaConsultasListaBot {
             return;
         }
 
+        List<Consulta> consultas = contexto.getServico(Consulta.class).buscarTodos();
         StringBuilder sb = new StringBuilder();
 
-        List<Consulta> consultasFiltradas = this.consultas.stream().filter(consulta -> consulta.getPaciente().contains(nomePaciente)).toList();
+        consultas = consultas.stream().filter(consulta -> consulta.paciente().contains(nomePaciente)).toList();
 
-        for (int i = 1; i <= consultasFiltradas.size(); i++) {
-            Consulta consulta = consultasFiltradas.get(i - 1);
-            sb.append("(").append(i).append(") ").append("Medico: ").append(consulta.getMedico()).append(" - ");
-            sb.append("Data e Hora: ").append(formatter.format(consulta.getDataHora())).append("<br>");
-        }
+        consultas.forEach(consulta -> {
+            sb.append("(").append(consulta.Id()).append(") ").append("Medico: ").append(consulta.medico()).append(" - ");
+            sb.append("Data e Hora: ").append(formatter.format(consulta.dataHora())).append("<br>");
+        });
 
         if (!consultas.isEmpty()) sb.insert(0, "Consultas agendadas para " + nomePaciente + ": <br>");
         else sb.append("Não há consultas agendadas para ").append(nomePaciente).append(". <br>");
 
-        contexto.responder(sb.toString());
+        contexto.responder(sb.toString(), "menuInicial");
     }
 }

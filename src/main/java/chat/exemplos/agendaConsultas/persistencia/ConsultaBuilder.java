@@ -1,4 +1,4 @@
-package com.exemplo.agendaConsultasDB;
+package chat.exemplos.agendaConsultas.persistencia;
 
 import java.time.LocalDateTime;
 

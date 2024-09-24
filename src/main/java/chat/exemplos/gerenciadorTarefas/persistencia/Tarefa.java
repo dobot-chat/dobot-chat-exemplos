@@ -1,4 +1,4 @@
-package com.exemplo.gerenciadorTarefasDB;
+package chat.exemplos.gerenciadorTarefas.persistencia;
 
 import chat.dobot.bot.annotations.Entidade;
 import chat.dobot.bot.annotations.Id;
