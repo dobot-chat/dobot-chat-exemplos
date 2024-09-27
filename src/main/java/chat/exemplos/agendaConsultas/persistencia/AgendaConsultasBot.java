@@ -77,18 +77,18 @@ public class AgendaConsultasBot {
         return sb.toString();
     }
 
-    @EstadoChat
-    public void informarPaciente(Contexto contexto) {
-        String nomePaciente = contexto.getMensagemUsuario();
+        @EstadoChat(estado = "informarPaciente")
+        public void informarPaciente(Contexto contexto) {
+            String nomePaciente = contexto.getMensagemUsuario();
 
-        if (!nomePaciente.equals("0")) {
-            consultaBuilder = new ConsultaBuilder();
-            consultaBuilder.setPaciente(nomePaciente);
-            contexto.responder(MENSAGEM_INFORMAR_MEDICO, "informarMedico");
-        } else {
-            contexto.responder(MENSAGEM_OPERACAO_CANCELADA, "menuInicial");
+            if (!nomePaciente.equals("0")) {
+                consultaBuilder = new ConsultaBuilder();
+                consultaBuilder.setPaciente(nomePaciente);
+                contexto.responder(MENSAGEM_INFORMAR_MEDICO, "informarMedico");
+            } else {
+                contexto.responder(MENSAGEM_OPERACAO_CANCELADA, "menuInicial");
+            }
         }
-    }
 
     @EstadoChat
     public void informarMedico(Contexto contexto) {
